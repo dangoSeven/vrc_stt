@@ -1,0 +1,7 @@
+numpy==1.23.5
+PyAudio==0.2.13
+python_osc==1.8.1
+sounddevice==0.4.6
+torch==2.0.0+cu117
+wavio==0.0.7
+whisper==1.1.10
