@@ -11,6 +11,10 @@ from collections import defaultdict
 import torch
 from pythonosc import udp_client
 import os
+import openai
+
+# Initialize the OpenAI API client
+openai.api_key = ""
 
 vad_model, utils = torch.hub.load(repo_or_dir='snakers4/silero-vad',
                               model='silero_vad',
@@ -49,16 +53,31 @@ def send_text_to_vrchat(text, send_immediately=True, play_sfx=True):
     # Send the text to the VRChat chatbox using the OSC address
     client.send_message("/chatbox/input", [text, send_immediately, play_sfx])
 
+def gpt_response(text):
+    prompt = f"Repeat the following but in the style of a cute anime catgirl. Keep the responses short.: {text}"
+
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
+    
+    if response and response.choices:
+        return response['choices'][0]['message']['content']
+    else:
+        return "Error: Unable to convert the text."
+
 def speech_to_text(filename):
     data_file_path = os.path.join(os.path.dirname(__file__), filename)
     result = model.transcribe(data_file_path)
-    text_result = result["text"]
-    print(result["text"])
+    text_result = gpt_response(result["text"])
+    print(text_result)
 
     if "exit app" in result["text"].lower():
         quit()
-    if (re.sub(r'\W+', '', result["text"]).isalnum() and result["text"].isascii()):
-        send_text_to_vrchat(result["text"])
+    if (re.sub(r'\W+', '', text_result).isalnum() and text_result.isascii()):
+        send_text_to_vrchat(text_result)
 
 def is_silent(data, threshold=SILENCE_THRESHOLD):
     return np.mean(np.abs(data)) < threshold
